@@ -1,6 +1,6 @@
 import requests
 import re
-from threads.utils import get_default_headers
+from threadspy.utils import get_default_headers
 import base64
 from typing import Union
 from instagrapi import Client

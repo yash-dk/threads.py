@@ -1,12 +1,12 @@
-from threads.constants import ENDPOINTS
+from threadspy.constants import ENDPOINTS
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from requests.exceptions import RequestException
 import re
-from threads.models import *
-from threads.utils import get_default_headers
-from threads.auth import Authorization
+from threadspy.models import *
+from threadspy.utils import get_default_headers
+from threadspy.auth import Authorization
 import mimetypes
 import json
 from urllib.parse import quote
@@ -108,7 +108,7 @@ class ThreadsApi:
         return True
 
 
-    def login(self):
+    def login(self) -> bool:
         self.private_token = self.auth.get_instagram_api_token()
         if not self._verify_login():
             self.private_token = self.auth.get_instagram_api_token(refresh=True)
@@ -118,6 +118,8 @@ class ThreadsApi:
                 self.is_logged_in = True
         else:
             self.is_logged_in = True
+
+        return self.is_logged_in
     
     def get_user_id(self, username: str, instagram: bool = False) -> int:
         uid = None
@@ -251,8 +253,15 @@ class ThreadsApi:
             url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/show/{id}/',
             headers=self.get_private_headers,
         )
+        
+        # The response of the api is bit diferent need to handle that
+        data = response.json()
+        new_data = {
+            'friendship_status': data,
+            'status': data.get('status')
+        }
 
-        return FriendshipStatusResponse.from_dict(response.json())
+        return FriendshipStatusResponse.from_dict(new_data)
 
     def follow_user(self, id: int) -> FriendshipStatusResponse:
         response = self._request(

@@ -1,6 +1,6 @@
 from typing import Any, List, Optional, Union
 from dataclasses import dataclass
-from threads.utils import populate_if_available
+from threadspy.utils import populate_if_available
 
 @dataclass
 class ThreadsHdProfilePicVersion:
