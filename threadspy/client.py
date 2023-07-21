@@ -6,7 +6,7 @@ from requests.exceptions import RequestException
 import re
 from threadspy.models import *
 from threadspy.utils import get_default_headers
-from threadspy.auth import Authorization
+from threadspy.auth import Authorization, Settings
 import mimetypes
 import json
 from urllib.parse import quote
@@ -24,9 +24,8 @@ class ThreadsApi:
             password: str = None,
             timeout: int = 10,
             retries: int = 3,
+            settings_file: str = "settings.json"
     ):
-
-        self.auth = Authorization(username, password)
         self.timeout = timeout
         self.retries = retries
         self.session = self._create_session()
@@ -35,6 +34,10 @@ class ThreadsApi:
         self.private_token = None
         self.is_logged_in = False
         self.user_id = None
+        self.settings = None
+        self.settings_file = settings_file
+        self._load_settings()
+        self.auth = Authorization(username, password, self.settings)
 
     @property
     def get_public_headers(self):
@@ -54,7 +57,18 @@ class ThreadsApi:
         })
 
         return headers
-         
+
+    def _save_settings(self):
+        with open(self.settings_file, 'w') as file:
+            file.write(json.dumps(self.settings.to_dict(), indent=4))
+
+    def _load_settings(self):
+        if os.path.exists(self.settings_file):
+            with open(self.settings_file, 'r') as file:
+                self.settings = Settings.from_dict(json.loads(file.read()))
+        else:
+            self.settings = None 
+    
     def _create_session(self):
         session = requests.Session()
         retry_strategy = Retry(
@@ -118,6 +132,10 @@ class ThreadsApi:
                 self.is_logged_in = True
         else:
             self.is_logged_in = True
+
+        if self.is_logged_in:
+            self.settings = self.auth.get_settings()
+            self._save_settings()
 
         return self.is_logged_in
     

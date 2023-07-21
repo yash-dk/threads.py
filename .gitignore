@@ -161,3 +161,4 @@ cython_debug/
 
 # Project Specific
 threads_token.bin
+settings.json

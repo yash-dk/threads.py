@@ -23,7 +23,6 @@ def get_default_headers() -> dict:
             'AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.1.2 Safari/605.1.15'
         ),
         'X-ASBD-ID': '129477',
-        'X-FB-LSD': 'NjppQDEgONsU_1LCzrmp6q',
         'X-IG-App-ID': '238260118697367',
     }
 
