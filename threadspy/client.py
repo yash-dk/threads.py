@@ -34,7 +34,7 @@ class ThreadsApi:
         self.private_token = None
         self.is_logged_in = False
         self.user_id = None
-        self.settings = None
+        self.settings: Settings = None
         self.settings_file = settings_file
         self._load_settings()
         self.auth = Authorization(
@@ -467,7 +467,7 @@ class ThreadsApi:
 
     def create(self, text, url=None, image=None, reply_to=None) -> dict:
         current_timestamp = time.time()
-        timezone_offset = (datetime.now() - datetime.utcnow()).seconds
+        timezone_offset = self.settings.timezone_offset
 
         parameters_as_string = {
             'text_post_app_info': {
@@ -477,13 +477,13 @@ class ThreadsApi:
             'source_type': '4',
             'caption': text,
             '_uid': self.user_id,
-            'device_id': str(f"android-{random.randint(0, 1e24):x}"),
+            'device_id': self.settings.uuids["android_device_id"],
             'upload_id': int(current_timestamp),
             'device': {
-                "manufacturer": "OnePlus",
-                "model": "ONEPLUS+A3010",
-                "android_version": 25,
-                "android_release": "7.1.1",
+                "manufacturer": self.settings.device_settings["manufacturer"],
+                "model": self.settings.device_settings["model"],
+                "android_version": self.settings.device_settings["android_version"],
+                "android_release": self.settings.device_settings["android_release"],
             }
         }
 
@@ -500,12 +500,33 @@ class ThreadsApi:
             parameters_as_string['text_post_app_info']['link_attachment_url'] = url
 
         elif url is None and image is not None:
-            endpoint = '/media/configure_text_post_app_feed/'
-            parameters_as_string['upload_id'] = self._upload_image(url=image)
-            parameters_as_string['scene_capture_type'] = ''
+            if len(image) == 1:
+                image = image[0]
+            elif len(image) < 1:
+                raise Exception("No image provided")
+
+            if isinstance(image, str):
+                endpoint = "/media/configure_text_post_app_feed/"           
+                upload_id = self._upload_image(image)
+                if upload_id is None:
+                    return False
+                parameters_as_string["upload_id"] = upload_id
+                parameters_as_string["scene_capture_type"] = ""
+            elif isinstance(image, list):
+                endpoint = "/media/configure_text_post_app_sidecar/"
+                parameters_as_string['client_sidecar_id'] = int(time.time() * 1000)
+                parameters_as_string["children_metadata"] = []
+                for i in image:
+                    upload_id = self._upload_image(i)
+                    parameters_as_string["children_metadata"] += [{
+                        'upload_id': upload_id,
+                        'source_type': '4',
+                        'timezone_offset': str(timezone_offset),
+                        'scene_capture_type': "",
+                    }]
 
         else:
-            raise ValueError('Provided image URL does not match required format. Please, create GitHub issue')
+            raise ValueError('Invalid image or url provided.')
 
         encoded_parameters = quote(string=json.dumps(obj=parameters_as_string), safe="!~*'()")
 
