@@ -510,3 +510,19 @@ class ThreadResponse:
                 for thread_data in data.get('reply_threads', [])
             ]
         )
+
+@dataclass
+class RepostData:
+    repost_id: int
+    repost_fbid: Optional[int] = None
+    reposted_at: Optional[int] = None
+    status: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'RepostData':
+        return cls(
+            repost_id=data['repost_id'],
+            repost_fbid=data.get('repost_fbid'),
+            reposted_at=data.get('reposted_at'),
+            status=data.get('status')
+        )

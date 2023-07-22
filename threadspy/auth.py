@@ -102,19 +102,16 @@ class Authorization:
 
 
     def get_instagram_api_token(self, refresh: bool = False) -> Union[str, None]:
-        # token = self._retrieve_token()
-        token = None
+        token = self._retrieve_token()
         if token is not None and not refresh:
             return token
         
         try:      
             iapi = Client()
             if self.settings is not None:
-                print("cached")
                 iapi.set_settings(self.settings.to_dict())
                 iapi.login(self.username, self.password)
             else:
-                print("not cached")
                 iapi.login(self.username, self.password)
                 self.settings = Settings.from_dict(iapi.get_settings())
             

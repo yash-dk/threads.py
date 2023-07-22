@@ -37,7 +37,11 @@ class ThreadsApi:
         self.settings = None
         self.settings_file = settings_file
         self._load_settings()
-        self.auth = Authorization(username, password, self.settings)
+        self.auth = Authorization(
+            username=username,
+            password=password,
+            settings=self.settings
+        )
 
     @property
     def get_public_headers(self):
@@ -133,7 +137,7 @@ class ThreadsApi:
         else:
             self.is_logged_in = True
 
-        if self.is_logged_in:
+        if self.is_logged_in and self.settings is not None:
             self.settings = self.auth.get_settings()
             self._save_settings()
 
@@ -414,7 +418,54 @@ class ThreadsApi:
 
         return FriendshipStatusResponse.from_dict(response.json())
 
-    def create_thread(self, text, url=None, image=None, reply_to=None) -> dict:
+    def like(self, thread_id: int) -> bool:
+        response = self._request(
+            method="POST",
+            url=f'{ENDPOINTS.INSTA_API_BASE}/media/{thread_id}_{self.user_id}/like/',
+            headers=self.get_private_headers,
+        )
+        
+        return response.json().get('status') == 'ok'
+
+    def unlike(self, thread_id: int) -> bool:
+        response = self._request(
+            method="POST",
+            url=f'{ENDPOINTS.INSTA_API_BASE}/media/{thread_id}_{self.user_id}/unlike/',
+            headers=self.get_private_headers,
+        )
+
+        return response.json().get('status') == 'ok'
+
+    def repost(self, thread_id: int) -> RepostData:
+        response = self._request(
+            method="POST",
+            url=f'{ENDPOINTS.INSTA_API_BASE}/repost/create_repost/',
+            headers=self.get_private_headers,
+            data=f'media_id={thread_id}',
+        )
+
+        return RepostData.from_dict(response.json())
+
+    def unrepost(self, thread_id: int) -> bool:
+        response = self._request(
+            method="POST",
+            url=f'{ENDPOINTS.INSTA_API_BASE}/repost/delete_text_app_repost/',
+            headers=self.get_private_headers,
+            data=f'original_media_id={thread_id}',
+        )
+
+        return response.json().get('status') == 'ok'
+
+    def delete(self, thread_id: int) -> dict:
+        response = self._request(
+            method="POST",
+            url=f'{ENDPOINTS.INSTA_API_BASE}/media/{thread_id}_{self.user_id}/delete/?media_type=TEXT_POST',
+            headers=self.get_private_headers,
+        )
+
+        return response.json().get('status') == 'ok'
+
+    def create(self, text, url=None, image=None, reply_to=None) -> dict:
         current_timestamp = time.time()
         timezone_offset = (datetime.now() - datetime.utcnow()).seconds
 
