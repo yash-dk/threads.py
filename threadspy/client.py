@@ -24,6 +24,7 @@ class ThreadsApi:
             password: str = None,
             timeout: int = 10,
             retries: int = 3,
+            token_path: str = "threads_token.bin",
             settings_file: str = "settings.json"
     ):
         self.timeout = timeout
@@ -40,6 +41,7 @@ class ThreadsApi:
         self.auth = Authorization(
             username=username,
             password=password,
+            token_path=token_path,
             settings=self.settings
         )
 
@@ -137,8 +139,8 @@ class ThreadsApi:
         else:
             self.is_logged_in = True
 
+        self.settings = self.auth.get_settings()
         if self.is_logged_in and self.settings is not None:
-            self.settings = self.auth.get_settings()
             self._save_settings()
 
         return self.is_logged_in
@@ -194,7 +196,7 @@ class ThreadsApi:
             url=f'{ENDPOINTS.INSTA_API_BASE}/users/{id}/info/',
             headers=self.get_private_headers
         )
-        return ThreadsUser.from_dict(response.json()["user"])
+        return ThreadsUser.from_dict(response.json()["user"], self)
 
     def search_user(self, query: str) -> SearchUsersResponse:
         response = self._request(
@@ -203,7 +205,7 @@ class ThreadsApi:
             headers=self.get_private_headers,
         )
 
-        return SearchUsersResponse.from_dict(response.json())
+        return SearchUsersResponse.from_dict(response.json(), self)
 
     def get_thread(self, id: int) -> ThreadResponse:
         response = self._request(
@@ -212,7 +214,7 @@ class ThreadsApi:
             headers=self.get_private_headers,
         )
 
-        return ThreadResponse.from_dict(response.json())
+        return ThreadResponse.from_dict(response.json(), self)
 
     def get_user_threads(self, user_id: int) -> List[Thread]:
         new_headers = self.get_public_headers
@@ -240,7 +242,7 @@ class ThreadsApi:
             data=payload
         )
 
-        return [Thread.from_dict(thread_data) for thread_data in response.json().get('threads', [])]
+        return [Thread.from_dict(thread_data, self) for thread_data in response.json().get('threads', [])]
         
     def get_user_threads_auth(self, user_id: int) -> List[Thread]:
         response = self._request(
@@ -249,7 +251,7 @@ class ThreadsApi:
             headers=self.get_private_headers
         )
 
-        return [Thread.from_dict(thread_data) for thread_data in response.json().get('threads', [])]
+        return [Thread.from_dict(thread_data, self) for thread_data in response.json().get('threads', [])]
 
     def get_user_followers(self, id: int) -> UserFollowersResponse:
         response = self._request(
@@ -258,7 +260,7 @@ class ThreadsApi:
             headers=self.get_private_headers,
         )
 
-        return UserFollowersResponse.from_dict(response.json())
+        return UserFollowersResponse.from_dict(response.json(), self)
     
     def get_user_following(self, id: int) -> UserFollowingResponse:
         response = self._request(
@@ -267,7 +269,7 @@ class ThreadsApi:
             headers=self.get_private_headers,
         )
 
-        return UserFollowingResponse.from_dict(response.json())
+        return UserFollowingResponse.from_dict(response.json(), self)
 
     def get_friendship_status(self, id: int) -> FriendshipStatusResponse:
         response = self._request(
@@ -358,7 +360,7 @@ class ThreadsApi:
             data=f'signed_body=SIGNATURE.{encoded_parameters}',
         )
 
-        return RestrictResponse.from_dict(response.json())
+        return RestrictResponse.from_dict(response.json(), self)
 
     def unrestrict_user(self, id: int) -> RestrictResponse:
         parameters = json.dumps(
@@ -377,7 +379,7 @@ class ThreadsApi:
             data=f'signed_body=SIGNATURE.{encoded_parameters}',
         )
 
-        return RestrictResponse.from_dict(response.json())
+        return RestrictResponse.from_dict(response.json(), self)
 
     def block_user(self, id: int) -> FriendshipStatusResponse:
         parameters = json.dumps(
@@ -456,7 +458,7 @@ class ThreadsApi:
 
         return response.json().get('status') == 'ok'
 
-    def delete(self, thread_id: int) -> dict:
+    def delete(self, thread_id: int) -> bool:
         response = self._request(
             method="POST",
             url=f'{ENDPOINTS.INSTA_API_BASE}/media/{thread_id}_{self.user_id}/delete/?media_type=TEXT_POST',

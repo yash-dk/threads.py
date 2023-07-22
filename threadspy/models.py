@@ -119,9 +119,10 @@ class ThreadsUser:
     full_name: Optional[str] = None
     pk_id: Optional[Any] = None
     friendship_status: Optional[FriendshipStatus] = None
+    _threads_client: Optional[Any] = None
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'ThreadsUser':
+    def from_dict(cls, data: dict, threads_client = None) -> 'ThreadsUser':
         return cls(
             is_private=data.get('is_private'),
             profile_pic_url=data.get('profile_pic_url'),
@@ -142,9 +143,92 @@ class ThreadsUser:
             pk=data.get('pk'),
             full_name=data.get('full_name'),
             pk_id=data.get('pk_id'),
-            friendship_status=populate_if_available(FriendshipStatus, data, 'friendship_status')
+            friendship_status=populate_if_available(FriendshipStatus, data, 'friendship_status'),
+            _threads_client=threads_client
         )
+    
+    # Modal specific methods
+    def get_user_threads(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+        
+        if self._threads_client.is_logged_in:
+            return self._threads_client.get_user_threads_auth(self.pk_id)
+        else:
+            return self._threads_client.get_user_threads(self.pk_id)
+    
+    def get_user_followers(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
 
+        return self._threads_client.get_user_followers(self.pk_id)
+    
+    def get_user_following(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.get_user_following(self.pk_id)
+    
+    def get_friendship_status(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.get_friendship_status(self.pk_id)
+    
+    def follow_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.follow_user(self.pk_id)
+
+    def follow_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.follow_user(self.pk_id)
+
+    def unfollow_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.unfollow_user(self.pk_id)
+
+    def mute_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.mute_user(self.pk_id)
+
+    def unmute_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.unmute_user(self.pk_id)
+
+    def restrict_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.restrict_user(self.pk_id)
+
+    def unrestrict_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.unrestrict_user(self.pk_id)
+
+    def block_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.block_user(self.pk_id)
+
+    def unblock_user(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.unblock_user(self.pk_id)
+    
 @dataclass
 class SearchUsersResponse:
     num_results: Optional[int]
@@ -153,11 +237,11 @@ class SearchUsersResponse:
     status: Optional[str]
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'SearchUsersResponse':
+    def from_dict(cls, data: dict, threads_client = None) -> 'SearchUsersResponse':
         return cls(
             num_results=data.get('num_results'),
             users=[
-                ThreadsUser.from_dict(user_data)
+                ThreadsUser.from_dict(user_data, threads_client)
                 for user_data in data.get('users', [])
             ],
             has_more=data.get('has_more'),
@@ -174,10 +258,10 @@ class UserFollowersResponse:
     next_max_id: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'UserFollowersResponse':
+    def from_dict(cls, data: dict, threads_client = None) -> 'UserFollowersResponse':
         return cls(
             users=[
-                ThreadsUser.from_dict(user_data)
+                ThreadsUser.from_dict(user_data, threads_client)
                 for user_data in data.get('users', [])
             ],
             big_list=data.get('big_list'),
@@ -197,10 +281,10 @@ class UserFollowingResponse:
     next_max_id: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'UserFollowingResponse':
+    def from_dict(cls, data: dict, threads_client = None) -> 'UserFollowingResponse':
         return cls(
             users=[
-                ThreadsUser.from_dict(user_data)
+                ThreadsUser.from_dict(user_data, threads_client)
                 for user_data in data.get('users', [])
             ],
             big_list=data.get('big_list'),
@@ -450,9 +534,10 @@ class Thread:
     thread_type: Optional[str] = None
     header: Optional[Any] = None
     posts: Optional[List[Post]] = None
+    _threads_client: Optional[Any] = None
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'Thread':
+    def from_dict(cls, data: dict, threads_client = None) -> 'Thread':
         return cls(
             thread_items=[
                 ThreadItem.from_dict(item_data)
@@ -464,8 +549,43 @@ class Thread:
             posts=[
                 Post.from_dict(post_data)
                 for post_data in data.get('posts', [])
-            ]
+            ],
+            _threads_client=threads_client
         )
+
+    def like(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.like(self.id)
+    
+    def unlike(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.unlike(self.id)
+
+    def repost(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.repost(self.id)
+
+    def unrepost(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+
+        return self._threads_client.unrepost(self.id)
+
+    def delete(self):
+        if self._threads_client is None:
+            raise Exception("ThreadsClient not set")
+        
+        if self.thread_items[0].post.user.pk != str(self._threads_client.get_current_user()):
+            raise Exception("Cannot delete thread, you are not the owner")
+
+        return self._threads_client.delete(self.id)
+    
 
 @dataclass
 class FriendshipStatusResponse:
@@ -487,10 +607,10 @@ class RestrictResponse:
     status: Optional[str]
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'RestrictResponse':
+    def from_dict(cls, data: dict, threads_client = None) -> 'RestrictResponse':
         return cls(
             users=[
-                ThreadsUser.from_dict(user_data)
+                ThreadsUser.from_dict(user_data, threads_client)
                 for user_data in data.get('users', [])
             ],
             status=data.get('status')
@@ -502,11 +622,11 @@ class ThreadResponse:
     reply_threads: Optional[List[Thread]]
 
     @classmethod
-    def from_dict(cls, data: dict) -> 'ThreadResponse':
+    def from_dict(cls, data: dict, threads_client = None) -> 'ThreadResponse':
         return cls(
-            containing_thread=populate_if_available(Thread, data, 'containing_thread'),
+            containing_thread=populate_if_available(Thread, data, 'containing_thread', threads_client),
             reply_threads=[
-                Thread.from_dict(thread_data)
+                Thread.from_dict(thread_data, threads_client)
                 for thread_data in data.get('reply_threads', [])
             ]
         )

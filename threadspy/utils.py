@@ -26,8 +26,8 @@ def get_default_headers() -> dict:
         'X-IG-App-ID': '238260118697367',
     }
 
-def populate_if_available(cls: Any, data: dict, key: str) -> Any:
+def populate_if_available(cls: Any, data: dict, key: str,threads_client = None) -> Any:
     if data.get(key) is not None:
-        return cls.from_dict(data[key])
+        return cls.from_dict(data[key]) if threads_client is None else cls.from_dict(data[key],threads_client)
     else:
         return None
