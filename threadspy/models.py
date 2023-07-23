@@ -163,6 +163,13 @@ class ThreadsUser:
     
     # Modal specific methods
     def get_user_threads(self) -> List[Thread]:
+        """
+        Get the threads of this user.
+
+        Returns:
+            List[Thread]: A list of threads associated with the user.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
         
@@ -172,66 +179,143 @@ class ThreadsUser:
             return self._threads_client.get_user_threads(self.pk_id)
     
     def get_user_followers(self) -> UserFollowersResponse:
+        """
+        Get this user's followers.
+
+        Returns:
+            UserFollowersResponse: The response containing the user's followers.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.get_user_followers(self.pk_id)
     
     def get_user_following(self) -> UserFollowersResponse:
+        """
+        Get the users followed by this user.
+
+        Returns:
+            UserFollowersResponse: The response containing the users followed by the user.
+        """
+        
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.get_user_following(self.pk_id)
     
     def get_friendship_status(self) -> FriendshipStatusResponse:
+        """
+        Get the friendship status of this user with the logged in user.
+
+        Returns:
+            FriendshipStatusResponse: The response containing the friendship status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.get_friendship_status(self.pk_id)
     
     def follow_user(self) -> FriendshipStatusResponse:
+        """
+        Follow this user.
+
+        Returns:
+            FriendshipStatusResponse: The response containing the updated friendship status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.follow_user(self.pk_id)
 
     def unfollow_user(self) -> FriendshipStatusResponse:
+        """
+        Unfollow this user.
+
+        Returns:
+            FriendshipStatusResponse: The response containing the updated friendship status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.unfollow_user(self.pk_id)
 
     def mute_user(self) -> FriendshipStatusResponse:
+        """
+        Mute this user.
+
+        Returns:
+            FriendshipStatusResponse: The response containing the updated friendship status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.mute_user(self.pk_id)
 
     def unmute_user(self) -> FriendshipStatusResponse:
+        """
+        Unmute this user.
+
+        Returns:
+            FriendshipStatusResponse: The response containing the updated friendship status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.unmute_user(self.pk_id)
 
     def restrict_user(self) -> RestrictResponse:
+        """
+        Restrict this user.
+
+        Returns:
+            RestrictResponse: The response containing the restrict status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.restrict_user(self.pk_id)
 
     def unrestrict_user(self) -> RestrictResponse:
+        """
+        Unrestrict this user.
+
+        Returns:
+            RestrictResponse: The response containing the updated restrict status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.unrestrict_user(self.pk_id)
 
     def block_user(self) -> FriendshipStatusResponse:
+        """
+        Block this user.
+
+        Returns:
+            FriendshipStatusResponse: The response containing the updated friendship status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.block_user(self.pk_id)
 
     def unblock_user(self) -> FriendshipStatusResponse:
+        """
+        Unblock this user.
+
+        Returns:
+            FriendshipStatusResponse: The response containing the updated friendship status.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
@@ -577,30 +661,65 @@ class Thread:
         )
 
     def like(self) -> bool:
+        """
+        Like this thread.
+
+        Returns:
+            bool: True if the liking is successful, False otherwise.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.like(self.id)
     
     def unlike(self) -> bool:
+        """
+        Unlike this thread.
+
+        Returns:
+            bool: True if the unliking is successful, False otherwise.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.unlike(self.id)
 
     def repost(self) -> RepostData:
+        """
+        Repost this thread.
+
+        Returns:
+            RepostData: The data associated with the repost.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.repost(self.id)
 
     def unrepost(self) -> bool:
+        """
+        Un-repost this thread.
+
+        Returns:
+            bool: True if the un-reposting is successful, False otherwise.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
 
         return self._threads_client.unrepost(self.id)
 
     def delete(self) -> bool:
+        """
+        Delete this thread.
+
+        Returns:
+            bool: True if the deletion is successful, False otherwise.
+        """
+
         if self._threads_client is None:
             raise Exception("ThreadsClient not set")
         
