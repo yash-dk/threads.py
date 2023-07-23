@@ -7,7 +7,7 @@ with open('requirements.txt', 'r') as f:
 
 setup(
     version="0.0.1",
-    name='threadspy',
+    name='threads.py',
     description='Unofficial API for Threads by Instagram. With type hints.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -25,6 +25,7 @@ setup(
         'Operating System :: OS Independent',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
