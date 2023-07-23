@@ -4,11 +4,11 @@ Unofficial API for Threads by Instagram. With type hints.
 # Installing
 To install the library on Linux:
 
-`python3 -m pip install threads.py`
+`python3 -m pip install threads-py-wrapper`
 
 To install the library on Windows:
 
-`py -m pip install threads.py`
+`py -m pip install threads-py-wrapper`
 
 **Python 3.8 or higher is needed for the library**
 

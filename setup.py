@@ -6,7 +6,7 @@ with open('requirements.txt', 'r') as f:
     requirements = f.read().splitlines()
 
 setup(
-    version="0.0.1",
+    version="0.0.2",
     name='threads-py-wrapper',
     description='Unofficial API for Threads by Instagram. With type hints.',
     long_description=long_description,
