@@ -7,43 +7,45 @@ on:
   workflow_dispatch:  # Manually triggered workflow
 
 jobs:
-  create_release:
-    name: Create GitHub Release
-    runs-on: ubuntu-latest
-    permissions:
+    create_release:
+      name: Create GitHub Release
+      runs-on: ubuntu-latest
+  
+      environment:
+        name: PyPI Publishing 
+  
+      permissions:
         contents: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.x
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel twine
-
-      - name: Build distribution
-        run: python setup.py sdist bdist_wheel
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload tar.gz
-        uses: actions/upload-artifact@v3
-        with:
-          name: Release Files
-          path: dist/*.tar.gz
-
-      - name: Upload wheel
-        uses: actions/upload-artifact@v3
-        with:
-          name: Release Files
-          path: dist/*.whl
+  
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
+  
+        - name: Set up Python
+          uses: actions/setup-python@v3
+          with:
+            python-version: 3.x 
+  
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install setuptools wheel twine
+  
+        - name: Build distribution
+          run: python setup.py sdist bdist_wheel
+  
+        - name: Create Release
+          id: create_release
+          uses: softprops/action-gh-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            files: |
+              dist/*.tar.gz
+              dist/*.whl
+              dist/*.zip
+  
+        - name: Get Release URL
+          id: release_url
+          run: |
+            echo "Release URL: ${{ steps.create_release.outputs.upload_url }}"
