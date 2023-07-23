@@ -7,7 +7,7 @@ with open('requirements.txt', 'r') as f:
 
 setup(
     version="0.0.1",
-    name='threads.py',
+    name='threads-py-wrapper',
     description='Unofficial API for Threads by Instagram. With type hints.',
     long_description=long_description,
     long_description_content_type='text/markdown',
