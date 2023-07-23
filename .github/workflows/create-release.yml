@@ -1,9 +1,10 @@
-name: Publish to PyPI
+name: Create Release
 
 on:
   push:
     tags:
-      - 'v*'  # Trigger the workflow on tag push matching 'v*'. Example: v1.0.0
+      - 'v*'
+  workflow_dispatch:  # Manually triggered workflow
 
 jobs:
   create_release:
@@ -17,7 +18,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: 3.x  # Replace 'x' with your desired Python version
+          python-version: 3.x
 
       - name: Install dependencies
         run: |
