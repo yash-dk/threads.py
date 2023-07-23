@@ -16,6 +16,7 @@ from uuid import uuid4
 import os
 from http import HTTPStatus
 from datetime import datetime
+from typing import List, Optional, Union
 
 class ThreadsApi:
     def __init__(
@@ -27,6 +28,18 @@ class ThreadsApi:
             token_path: str = "threads_token.bin",
             settings_file: str = "settings.json"
     ):
+        """
+        Initializes the ThreadsApi class.
+
+        Parameters:
+            username (str, optional): The username for threads account. Default is None.
+            password (str, optional): The password for threads account. Default is None.
+            timeout (int, optional): The request timeout in seconds. Default is 10.
+            retries (int, optional): The number of retries for failed requests. Default is 3.
+            token_path (str, optional): The file path to save the authentication token. Default is "threads_token.bin".
+            settings_file (str, optional): The file path to save the settings. Default is "settings.json".
+        """
+
         self.timeout = timeout
         self.retries = retries
         self.session = self._create_session()
@@ -47,6 +60,13 @@ class ThreadsApi:
 
     @property
     def get_public_headers(self):
+        """
+        Property to get headers for public API requests.
+
+        Returns:
+            dict: The headers with public API token.
+        """
+
         headers = get_default_headers()
         self.public_token = self.auth.get_public_api_token()
         headers['X-FB-LSD'] = self.public_token
@@ -54,6 +74,13 @@ class ThreadsApi:
 
     @property
     def get_private_headers(self):
+        """
+        Property to get headers for private API requests.
+
+        Returns:
+            dict: The headers with private API token and other required headers.
+        """
+
         headers = get_default_headers()
         headers.update({
             'Authorization': f'Bearer IGT:2:{self.private_token}',
@@ -65,17 +92,32 @@ class ThreadsApi:
         return headers
 
     def _save_settings(self):
+        """
+        Internal method to save settings to a file.
+        """
+
         with open(self.settings_file, 'w') as file:
             file.write(json.dumps(self.settings.to_dict(), indent=4))
 
     def _load_settings(self):
+        """
+        Internal method to load settings from a file.
+        """
+
         if os.path.exists(self.settings_file):
             with open(self.settings_file, 'r') as file:
                 self.settings = Settings.from_dict(json.loads(file.read()))
         else:
             self.settings = None 
     
-    def _create_session(self):
+    def _create_session(self) -> requests.Session:
+        """
+        Internal method to create a requests session with retry mechanism.
+
+        Returns:
+            requests.Session: The requests session object.
+        """
+
         session = requests.Session()
         retry_strategy = Retry(
             total=self.retries,
@@ -90,6 +132,18 @@ class ThreadsApi:
         return session
 
     def _request(self, method, url, **kwargs) -> requests.Response:
+        """
+        Internal method to make a HTTP request and handle exceptions.
+
+        Parameters:
+            method (str): The HTTP method (GET, POST, PUT, DELETE).
+            url (str): The URL to make the request.
+            **kwargs: Additional keyword arguments for the request.
+
+        Returns:
+            requests.Response: The response object.
+        """
+
         try:
             response = self.session.request(method, url, **kwargs)
             response.raise_for_status()
@@ -99,6 +153,13 @@ class ThreadsApi:
             return None
 
     def _verify_login(self):
+        """
+        Internal method to verify user login. By fetching the usernameinfo.
+
+        Returns:
+            bool: True if login is successful, False otherwise.
+        """
+
         response = self._request(
             method='GET',
             url = f"{ENDPOINTS.INSTA_API_BASE}/users/{self.auth.username}/usernameinfo/",
@@ -129,6 +190,13 @@ class ThreadsApi:
 
 
     def login(self) -> bool:
+        """
+        Logs in the user and obtains the private API token.
+
+        Returns:
+            bool: True if login is successful, False otherwise.
+        """
+
         self.private_token = self.auth.get_instagram_api_token()
         if not self._verify_login():
             self.private_token = self.auth.get_instagram_api_token(refresh=True)
@@ -146,6 +214,17 @@ class ThreadsApi:
         return self.is_logged_in
     
     def get_user_id(self, username: str, instagram: bool = False) -> int:
+        """
+        Gets the user ID from either Threads or Instagram for the corresponding username.
+
+        Parameters:
+            username (str): The username to get the ID for.
+            instagram (bool, optional): If True, search for the user on Instagram. Default is False.
+
+        Returns:
+            int: The user ID.
+        """
+
         uid = None
         if instagram:
             uid = self.get_user_id_from_instagram(username)
@@ -159,12 +238,28 @@ class ThreadsApi:
         return uid
 
     def get_current_user_id(self) -> int:
+        """
+        Gets the ID of the current user.
+
+        Returns:
+            int: The user ID.
+        """
+
         if self.user_id is not None:
             return self.user_id
         return self.get_user_id(self.auth.username)
     
     def get_user_id_from_instagram(self, username: str) -> int:
-        
+        """
+        Gets the user ID from Instagram for the corresponding username.
+
+        Parameters:
+            username (str): The username to get the ID for.
+
+        Returns:
+            int: The user ID.
+        """
+
         url = ENDPOINTS.INSTA_BASE + f'/{username}'
         response = self._request(
             method='GET',
@@ -178,6 +273,16 @@ class ThreadsApi:
         return int(user_id)
 
     def get_user_id_from_threads(self, username: str) -> int:
+        """
+        Gets the user ID from Threads for the corresponding username.
+
+        Parameters:
+            username (str): The username to get the ID for.
+
+        Returns:
+            int: The user ID.
+        """
+
         url = ENDPOINTS.THREADS_BASE + f'/@{username}'
         response = self._request(
             method='GET',
@@ -190,15 +295,35 @@ class ThreadsApi:
 
         return int(user_id)
 
-    def get_user_profile(self, id: int) -> ThreadsUser:
+    def get_user_profile(self, user_id: int) -> ThreadsUser:
+        """
+        Gets the user profile for a given user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            ThreadsUser: The ThreadsUser object containing user profile information.
+        """
+
         response = self._request(
             method='GET',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/users/{id}/info/',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/users/{user_id}/info/',
             headers=self.get_private_headers
         )
         return ThreadsUser.from_dict(response.json()["user"], self)
 
     def search_user(self, query: str) -> SearchUsersResponse:
+        """
+        Searches for users based on a query string provided.
+
+        Parameters:
+            query (str): The search query.
+
+        Returns:
+            SearchUsersResponse: The response object containing search results.
+        """
+
         response = self._request(
             method='GET',
             url=f'{ENDPOINTS.INSTA_API_BASE}/users/search/?q={query}',
@@ -207,16 +332,36 @@ class ThreadsApi:
 
         return SearchUsersResponse.from_dict(response.json(), self)
 
-    def get_thread(self, id: int) -> ThreadResponse:
+    def get_thread(self, user_id: int) -> ThreadResponse:
+        """
+        Gets the thread information for a given thread ID.
+
+        Parameters:
+            id (int): The thread ID.
+
+        Returns:
+            ThreadResponse: The response object containing thread information.
+        """
+
         response = self._request(
             method='GET',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/text_feed/{id}/replies',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/text_feed/{user_id}/replies',
             headers=self.get_private_headers,
         )
 
         return ThreadResponse.from_dict(response.json(), self)
 
     def get_user_threads(self, user_id: int) -> List[Thread]:
+        """
+        Gets the threads associated with a user with provided user ID.
+
+        Parameters:
+            user_id (int): The user ID.
+
+        Returns:
+            List[Thread]: A list of Thread objects.
+        """
+
         new_headers = self.get_public_headers
 
         new_headers.update({
@@ -245,6 +390,16 @@ class ThreadsApi:
         return [Thread.from_dict(thread_data, self) for thread_data in response.json().get('threads', [])]
         
     def get_user_threads_auth(self, user_id: int) -> List[Thread]:
+        """
+        Gets the threads associated with a user with provided user ID using authenticated request.
+
+        Parameters:
+            user_id (int): The user ID.
+
+        Returns:
+            List[Thread]: A list of Thread objects.
+        """
+
         response = self._request(
             method='GET',
             url=f'{ENDPOINTS.INSTA_API_BASE}/text_feed/{user_id}/profile/',
@@ -253,28 +408,58 @@ class ThreadsApi:
 
         return [Thread.from_dict(thread_data, self) for thread_data in response.json().get('threads', [])]
 
-    def get_user_followers(self, id: int) -> UserFollowersResponse:
+    def get_user_followers(self, user_id: int) -> UserFollowersResponse:
+        """
+        Gets the followers of a user with the provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            UserFollowersResponse: The response object containing follower information.
+        """
+
         response = self._request(
             method='GET',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/{id}/followers/',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/{user_id}/followers/',
             headers=self.get_private_headers,
         )
 
         return UserFollowersResponse.from_dict(response.json(), self)
     
-    def get_user_following(self, id: int) -> UserFollowingResponse:
+    def get_user_following(self, user_id: int) -> UserFollowingResponse:
+        """
+        Gets the users a user is following.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            UserFollowingResponse: The response object containing following information.
+        """
+
         response = self._request(
             method='GET',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/{id}/following/',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/{user_id}/following/',
             headers=self.get_private_headers,
         )
 
         return UserFollowingResponse.from_dict(response.json(), self)
 
-    def get_friendship_status(self, id: int) -> FriendshipStatusResponse:
+    def get_friendship_status(self, user_id: int) -> FriendshipStatusResponse:
+        """
+        Gets the friendship status with another user.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            FriendshipStatusResponse: The response object containing friendship status.
+        """
+
         response = self._request(
             method='GET',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/show/{id}/',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/show/{user_id}/',
             headers=self.get_private_headers,
         )
         
@@ -287,28 +472,58 @@ class ThreadsApi:
 
         return FriendshipStatusResponse.from_dict(new_data)
 
-    def follow_user(self, id: int) -> FriendshipStatusResponse:
+    def follow_user(self, user_id: int) -> FriendshipStatusResponse:
+        """
+        Follows a user with provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            FriendshipStatusResponse: The response object containing friendship status after following.
+        """
+
         response = self._request(
             method='POST',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/create/{id}/',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/create/{user_id}/',
             headers=self.get_private_headers,
         )
 
         return FriendshipStatusResponse.from_dict(response.json())
     
-    def unfollow_user(self, id: int) -> FriendshipStatusResponse:
+    def unfollow_user(self, user_id: int) -> FriendshipStatusResponse:
+        """
+        Unfollows a user with provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            FriendshipStatusResponse: The response object containing friendship status after unfollowing.
+        """
+
         response = self._request(
             method='POST',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/destroy/{id}/',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/destroy/{user_id}/',
             headers=self.get_private_headers,
         )
 
         return FriendshipStatusResponse.from_dict(response.json())
     
-    def mute_user(self, id: int) -> FriendshipStatusResponse:
+    def mute_user(self, user_id: int) -> FriendshipStatusResponse:
+        """
+        Mutes a user with provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            FriendshipStatusResponse: The response object containing friendship status after muting.
+        """
+
         parameters = json.dumps(
             obj={
-                'target_posts_author_id': id,
+                'target_posts_author_id': user_id,
                 'container_module': 'ig_text_feed_timeline',
             },
         )
@@ -324,10 +539,20 @@ class ThreadsApi:
 
         return FriendshipStatusResponse.from_dict(response.json())
 
-    def unmute_user(self, id: int) -> FriendshipStatusResponse:
+    def unmute_user(self, user_id: int) -> FriendshipStatusResponse:
+        """
+        Unmutes a user with provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            FriendshipStatusResponse: The response object containing friendship status after unmuting.
+        """
+
         parameters = json.dumps(
             obj={
-                'target_posts_author_id': id,
+                'target_posts_author_id': user_id,
                 'container_module': 'ig_text_feed_timeline',
             },
         )
@@ -343,10 +568,20 @@ class ThreadsApi:
 
         return FriendshipStatusResponse.from_dict(response.json())
 
-    def restrict_user(self, id: int) -> RestrictResponse:
+    def restrict_user(self, user_id: int) -> RestrictResponse:
+        """
+        Restricts a user with provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            RestrictResponse: The response object containing restrict status.
+        """
+        
         parameters = json.dumps(
             obj={
-                'user_ids': id,
+                'user_ids': user_id,
                 'container_module': 'ig_text_feed_timeline',
             },
         )
@@ -362,10 +597,20 @@ class ThreadsApi:
 
         return RestrictResponse.from_dict(response.json(), self)
 
-    def unrestrict_user(self, id: int) -> RestrictResponse:
+    def unrestrict_user(self, user_id: int) -> RestrictResponse:
+        """
+        Unrestricts a user with provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            RestrictResponse: The response object containing restrict status after unrestricting.
+        """
+
         parameters = json.dumps(
             obj={
-                'target_user_id': id,
+                'target_user_id': user_id,
                 'container_module': 'ig_text_feed_timeline',
             },
         )
@@ -381,10 +626,20 @@ class ThreadsApi:
 
         return RestrictResponse.from_dict(response.json(), self)
 
-    def block_user(self, id: int) -> FriendshipStatusResponse:
+    def block_user(self, user_id: int) -> FriendshipStatusResponse:
+        """
+        Blocks a user with provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            FriendshipStatusResponse: The response object containing friendship status after blocking.
+        """
+
         parameters = json.dumps(
             obj={
-                'user_id': id,
+                'user_id': user_id,
                 'surface': 'ig_text_feed_timeline',
                 'is_auto_block_enabled': 'true',
             },
@@ -394,17 +649,27 @@ class ThreadsApi:
 
         response = self._request(
             method='POST',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/block/{id}/',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/block/{user_id}/',
             headers=self.get_private_headers,
             data=f'signed_body=SIGNATURE.{encoded_parameters}',
         )
 
         return FriendshipStatusResponse.from_dict(response.json())
 
-    def unblock_user(self, id: int) -> FriendshipStatusResponse:
+    def unblock_user(self, user_id: int) -> FriendshipStatusResponse:
+        """
+        Unblocks a user with provided user ID.
+
+        Parameters:
+            id (int): The user ID.
+
+        Returns:
+            FriendshipStatusResponse: The response object containing friendship status after unblocking.
+        """
+
         parameters = json.dumps(
             obj={
-                'user_id': id,
+                'user_id': user_id,
                 'container_module': 'ig_text_feed_timeline',
             },
         )
@@ -413,7 +678,7 @@ class ThreadsApi:
 
         response = self._request(
             method='POST',
-            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/unblock/{id}/',
+            url=f'{ENDPOINTS.INSTA_API_BASE}/friendships/unblock/{user_id}/',
             headers=self.get_private_headers,
             data=f'signed_body=SIGNATURE.{encoded_parameters}',
         )
@@ -421,6 +686,15 @@ class ThreadsApi:
         return FriendshipStatusResponse.from_dict(response.json())
 
     def like(self, thread_id: int) -> bool:
+        """
+        Likes a thread with provided thread ID.
+
+        Parameters:
+            thread_id (int): The ID of the thread to like.
+
+        Returns:
+            bool: True if the like is successful, False otherwise.
+        """
         response = self._request(
             method="POST",
             url=f'{ENDPOINTS.INSTA_API_BASE}/media/{thread_id}_{self.user_id}/like/',
@@ -430,6 +704,16 @@ class ThreadsApi:
         return response.json().get('status') == 'ok'
 
     def unlike(self, thread_id: int) -> bool:
+        """
+        Unlikes a thread with provided thread ID.
+
+        Parameters:
+            thread_id (int): The ID of the thread to unlike.
+
+        Returns:
+            bool: True if the unlike is successful, False otherwise.
+        """
+
         response = self._request(
             method="POST",
             url=f'{ENDPOINTS.INSTA_API_BASE}/media/{thread_id}_{self.user_id}/unlike/',
@@ -439,6 +723,16 @@ class ThreadsApi:
         return response.json().get('status') == 'ok'
 
     def repost(self, thread_id: int) -> RepostData:
+        """
+        Reposts a thread with provided thread ID.
+
+        Parameters:
+            thread_id (int): The ID of the thread to repost.
+
+        Returns:
+            RepostData: The response object containing repost data.
+        """
+
         response = self._request(
             method="POST",
             url=f'{ENDPOINTS.INSTA_API_BASE}/repost/create_repost/',
@@ -448,17 +742,37 @@ class ThreadsApi:
 
         return RepostData.from_dict(response.json())
 
-    def unrepost(self, thread_id: int) -> bool:
+    def unrepost(self, original_thread_id: int) -> bool:
+        """
+        Unreposts a thread with provided original thread ID.
+
+        Parameters:
+            thread_id (int): The ID of the original thread to unrepost.
+
+        Returns:
+            bool: True if the unrepost is successful, False otherwise.
+        """
+        
         response = self._request(
             method="POST",
             url=f'{ENDPOINTS.INSTA_API_BASE}/repost/delete_text_app_repost/',
             headers=self.get_private_headers,
-            data=f'original_media_id={thread_id}',
+            data=f'original_media_id={original_thread_id}',
         )
 
         return response.json().get('status') == 'ok'
 
     def delete(self, thread_id: int) -> bool:
+        """
+        Deletes a thread with provided thread ID.
+
+        Parameters:
+            thread_id (int): The ID of the thread to delete.
+
+        Returns:
+            bool: True if the deletion is successful, False otherwise.
+        """
+
         response = self._request(
             method="POST",
             url=f'{ENDPOINTS.INSTA_API_BASE}/media/{thread_id}_{self.user_id}/delete/?media_type=TEXT_POST',
@@ -467,7 +781,23 @@ class ThreadsApi:
 
         return response.json().get('status') == 'ok'
 
-    def create(self, text, url=None, image=None, reply_to=None) -> dict:
+    def create(self, text: str, url: str=None, image: Optional[Union[str, List]]=None, reply_to: int=None) -> dict:
+        """
+        Creates a new thread.
+
+        Parameters:
+            text (str): The text content of the thread.
+            url (str, optional): The URL to include in the thread. Default is None.
+            image (str or list, optional): The image or list of images to include in the thread. Default is None.
+            reply_to (int, optional): The ID of the thread to reply to. Default is None.
+
+        Returns:
+            dict: The response JSON containing the details of the newly created thread.
+
+        TODO:
+            return a thread object or create thread response
+        """
+        
         current_timestamp = time.time()
         timezone_offset = self.settings.timezone_offset
 
@@ -542,6 +872,16 @@ class ThreadsApi:
         return response.json()
     
     def _upload_image(self, url: str) -> int:
+        """
+        Internal method to upload an image.
+
+        Parameters:
+            url (str): The URL or local file path of the image.
+
+        Returns:
+            int: The upload ID of the image.
+        """
+
         random_number = random.randint(1000000000, 9999999999)
 
         upload_id = int(time.time())

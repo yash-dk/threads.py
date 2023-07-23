@@ -69,6 +69,16 @@ class Authorization:
             token_path: str = "",
             settings: Settings = None,
     ):
+        """
+        Initialize the Authorization object.
+
+        Parameters:
+            username (str, optional): The Instagram username for authentication.
+            password (str, optional): The Instagram password for authentication.
+            token_path (str, optional): The path to store the encrypted token.
+            settings (Settings, optional): The settings for the Instagram client.
+        """
+
         self.username = username
         self.password = password
         self.token_path = token_path if token_path else "threads_token.bin"
@@ -76,6 +86,16 @@ class Authorization:
         self.headers = get_default_headers()
 
     def generate_key_from_password(self, password):
+        """
+        Generate the encryption key from the provided password.
+
+        Parameters:
+            password (str): The password used to generate the key.
+
+        Returns:
+            bytes: The encryption key.
+        """
+
         # Pad the password if its length is less than 32 bytes
         while len(password) < 32:
             password += password
@@ -86,12 +106,26 @@ class Authorization:
         return key
 
     def _store_token(self, token):
+        """
+        Store the encrypted token in the specified file.
+
+        Parameters:
+            token (str): The token to be encrypted and stored.
+        """
+
         cipher_suite = Fernet(self.generate_key_from_password(self.password))
         encrypted_token = cipher_suite.encrypt(token.encode())
         with open(self.token_path, 'wb') as file:
             file.write(encrypted_token)
 
     def _retrieve_token(self):
+        """
+        Retrieve and decrypt the stored token.
+
+        Returns:
+            str: The decrypted token or None if not found.
+        """
+
         cipher_suite = Fernet(self.generate_key_from_password(self.password))
         if not os.path.exists(self.token_path):
             return None
@@ -102,6 +136,16 @@ class Authorization:
 
 
     def get_instagram_api_token(self, refresh: bool = False) -> Union[str, None]:
+        """
+        Get the Instagram API token.
+
+        Parameters:
+            refresh (bool, optional): If True, force refresh the token.
+
+        Returns:
+            str or None: The Instagram API token if successful, None otherwise.
+        """
+
         token = self._retrieve_token()
         if token is not None and not refresh:
             return token
@@ -124,9 +168,23 @@ class Authorization:
             raise
     
     def get_settings(self) -> Settings:
+        """
+        Get the Instagram client settings.
+
+        Returns:
+            Settings: The Instagram client settings.
+        """
+
         return self.settings
 
     def get_public_api_token(self) -> str:
+        """
+        Get the public API token for Instagram.
+
+        Returns:
+            str: The public API token.
+        """
+        
         response = requests.get(
             url='https://www.instagram.com/instagram',
             headers=self.headers,
