@@ -15,7 +15,6 @@ import time
 from uuid import uuid4
 import os
 from http import HTTPStatus
-from datetime import datetime
 from typing import List, Optional, Union
 
 class ThreadsApi:
